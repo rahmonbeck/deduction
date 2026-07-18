@@ -39,7 +39,7 @@ type CaseMetadata = {
 
 type Section = "cover" | "details" | "suspects" | "clues" | "verdict";
 
-type View = "archive" | "case";
+type View = "home" | "archive" | "case";
 
 type ClueDecision = "kept" | "dismissed" | null;
 
@@ -64,7 +64,7 @@ function moodBadge(mood?: string) {
 }
 
 function ClueIcon({ index }: { index: number }) {
-  const type = index % 4;
+  const type = index % 7;
 
   return (
     <svg width="36" height="36" viewBox="0 0 110 110" className="flex-shrink-0">
@@ -82,62 +82,62 @@ function ClueIcon({ index }: { index: number }) {
       {type === 1 && (
         <>
           <circle cx="45" cy="45" r="18" fill="none" stroke="#e4d9c4" strokeWidth="4" />
-          <line
-            x1="58"
-            y1="58"
-            x2="75"
-            y2="75"
-            stroke="#e4d9c4"
-            strokeWidth="5"
-            strokeLinecap="round"
-          />
+          <line x1="58" y1="58" x2="75" y2="75" stroke="#e4d9c4" strokeWidth="5" strokeLinecap="round" />
         </>
       )}
 
       {type === 2 && (
         <>
           <path
-            d="M 55 25 Q 70 30 70 45 Q 70 60 55 80 Q 40 60 40 45 Q 40 30 55 25 Z"
+            d="M55 25 Q70 30 70 45 Q70 60 55 80 Q40 60 40 45 Q40 30 55 25Z"
             fill="none"
             stroke="#e4d9c4"
             strokeWidth="2"
           />
-          <path d="M 47 35 Q 55 38 63 35" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
-          <path d="M 45 45 Q 55 49 65 45" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
-          <path d="M 47 55 Q 55 58 63 55" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
+          <path d="M47 35 Q55 38 63 35" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
+          <path d="M45 45 Q55 49 65 45" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
+          <path d="M47 55 Q55 58 63 55" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
         </>
       )}
 
       {type === 3 && (
         <>
           <circle cx="42" cy="42" r="12" fill="none" stroke="#e4d9c4" strokeWidth="4" />
-          <line
-            x1="51"
-            y1="51"
-            x2="77"
-            y2="77"
+          <line x1="51" y1="51" x2="77" y2="77" stroke="#e4d9c4" strokeWidth="4" strokeLinecap="round" />
+          <line x1="67" y1="67" x2="75" y2="59" stroke="#e4d9c4" strokeWidth="4" strokeLinecap="round" />
+          <line x1="72" y1="72" x2="80" y2="64" stroke="#e4d9c4" strokeWidth="4" strokeLinecap="round" />
+        </>
+      )}
+
+      {type === 4 && (
+        <>
+          <path
+            d="M32 35 Q55 20 78 35 L72 76 Q55 88 38 76 Z"
+            fill="none"
             stroke="#e4d9c4"
-            strokeWidth="4"
-            strokeLinecap="round"
+            strokeWidth="3"
           />
-          <line
-            x1="67"
-            y1="67"
-            x2="75"
-            y2="59"
+          <path d="M40 42 Q55 48 70 42" fill="none" stroke="#e4d9c4" strokeWidth="2" />
+          <path d="M40 55 Q55 61 70 55" fill="none" stroke="#e4d9c4" strokeWidth="2" />
+        </>
+      )}
+
+      {type === 5 && (
+        <>
+          <path
+            d="M38 75 Q28 58 35 45 Q40 36 47 45 L50 55 L50 31 Q50 25 55 25 Q60 25 60 31 V51 L62 30 Q63 25 68 26 Q72 27 71 33 L69 54 L73 38 Q75 33 79 35 Q83 37 81 43 L76 65 Q72 80 60 83 Z"
+            fill="none"
             stroke="#e4d9c4"
-            strokeWidth="4"
-            strokeLinecap="round"
+            strokeWidth="3"
           />
-          <line
-            x1="72"
-            y1="72"
-            x2="80"
-            y2="64"
-            stroke="#e4d9c4"
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
+        </>
+      )}
+
+      {type === 6 && (
+        <>
+          <path d="M30 70 L55 30 L80 70 Z" fill="none" stroke="#e4d9c4" strokeWidth="3" />
+          <circle cx="55" cy="60" r="5" fill="#e4d9c4" />
+          <line x1="55" y1="42" x2="55" y2="54" stroke="#e4d9c4" strokeWidth="3" />
         </>
       )}
     </svg>
@@ -179,13 +179,12 @@ export default function Home() {
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
-  const [view, setView] = useState<View>("archive");
+  const [view, setView] = useState<View>("home");
   const [section, setSection] = useState<Section>("cover");
 
   const [loading, setLoading] = useState(false);
-  const [loadingCases, setLoadingCases] = useState(true);
+  const [loadingCases, setLoadingCases] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [cases, setCases] = useState<CaseMetadata[]>([]);
@@ -217,23 +216,7 @@ export default function Home() {
     }
 
     setUserEmail(data.session.user.email ?? null);
-
-    const token = data.session.access_token;
-
-    try {
-      const adminRes = await fetch("/api/admin", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setIsAdmin(adminRes.ok);
-    } catch {
-      setIsAdmin(false);
-    }
-
     setCheckingAuth(false);
-    loadCases();
   }
 
   async function handleLogout() {
@@ -244,6 +227,7 @@ export default function Home() {
   async function loadCases() {
     try {
       setLoadingCases(true);
+      setError(null);
 
       const res = await fetch("/api/cases");
       const json = await res.json();
@@ -258,6 +242,12 @@ export default function Home() {
     } finally {
       setLoadingCases(false);
     }
+  }
+
+  function openArchive() {
+    setError(null);
+    setView("archive");
+    loadCases();
   }
 
   async function openCase(id: string) {
@@ -312,9 +302,6 @@ export default function Home() {
       setRevealedClues(new Set());
       setClueDecisions({});
       setSection("cover");
-
-      await loadCases();
-
       setView("case");
       setPageTurning(true);
 
@@ -332,7 +319,7 @@ export default function Home() {
     setPageTurning(true);
 
     setTimeout(() => {
-      setView("archive");
+      setView("home");
       setCaseData(null);
       setPageTurning(false);
     }, 1100);
@@ -483,10 +470,7 @@ export default function Home() {
   if (checkingAuth) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#100d0a] text-[#d8cdbb]">
-        <div
-          className="text-xs tracking-widest"
-          style={{ fontFamily: "monospace" }}
-        >
+        <div className="text-xs tracking-widest" style={{ fontFamily: "monospace" }}>
           TEKSHIRILMOQDA...
         </div>
       </main>
@@ -520,6 +504,50 @@ export default function Home() {
             #100d0a;
         }
 
+        .typewriter {
+          font-family: monospace;
+          letter-spacing: 0.08em;
+        }
+
+        .home-card {
+          position: relative;
+          overflow: hidden;
+          border: 1px solid #68482d;
+          background: #24150d;
+          transition:
+            transform 0.35s ease,
+            filter 0.35s ease,
+            border-color 0.35s ease;
+        }
+
+        .home-card:hover {
+          transform: translateY(-10px);
+          filter: brightness(1.15);
+          border-color: #a67a4c;
+        }
+
+        .home-card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.05),
+            transparent 35%,
+            rgba(0, 0, 0, 0.25)
+          );
+        }
+
+        .home-card-red {
+          background: #64221e;
+          border-color: #8d302b;
+        }
+
+        .home-card-red:hover {
+          border-color: #c05a50;
+        }
+
         .archive-shelf {
           background:
             linear-gradient(
@@ -530,20 +558,13 @@ export default function Home() {
               rgba(0, 0, 0, 0.4)
             ),
             linear-gradient(180deg, #352218, #1a100b 60%, #0d0906);
-
           box-shadow:
             inset 0 0 50px rgba(0, 0, 0, 0.8),
             0 30px 100px rgba(0, 0, 0, 0.8);
         }
 
         .shelf-line {
-          background: linear-gradient(
-            90deg,
-            #24150d,
-            #8b5c32,
-            #24150d
-          );
-
+          background: linear-gradient(90deg, #24150d, #8b5c32, #24150d);
           box-shadow:
             0 4px 8px rgba(0, 0, 0, 0.8),
             inset 0 1px rgba(255, 255, 255, 0.1);
@@ -553,7 +574,6 @@ export default function Home() {
           transition:
             transform 0.3s ease,
             filter 0.3s ease;
-
           box-shadow:
             inset 0 0 15px rgba(0, 0, 0, 0.35),
             5px 8px 10px rgba(0, 0, 0, 0.45);
@@ -569,7 +589,6 @@ export default function Home() {
           overflow: hidden;
           isolation: isolate;
           perspective: 1800px;
-
           background:
             linear-gradient(
               90deg,
@@ -581,10 +600,8 @@ export default function Home() {
               transparent 1px
             ),
             #eee5d3;
-
           background-size: 24px 24px;
           color: #29221b;
-
           box-shadow:
             0 25px 70px rgba(0, 0, 0, 0.7),
             inset 0 0 45px rgba(105, 75, 35, 0.06);
@@ -599,7 +616,6 @@ export default function Home() {
           transform-origin: left center;
           transform-style: preserve-3d;
           backface-visibility: hidden;
-
           background:
             linear-gradient(
               90deg,
@@ -615,13 +631,10 @@ export default function Home() {
               rgba(80, 50, 25, 0.04)
             ),
             #eee5d3;
-
           box-shadow:
             12px 0 22px rgba(0, 0, 0, 0.2),
             inset -12px 0 20px rgba(65, 45, 25, 0.12);
-
-          animation: realPaperTurn 1.1s
-            cubic-bezier(0.22, 0.61, 0.36, 1)
+          animation: realPaperTurn 1.1s cubic-bezier(0.22, 0.61, 0.36, 1)
             forwards;
         }
 
@@ -634,18 +647,14 @@ export default function Home() {
           left: 0;
           width: 100%;
           pointer-events: none;
-
           background: linear-gradient(
             90deg,
             rgba(38, 25, 14, 0.45),
             rgba(38, 25, 14, 0.14) 8%,
             transparent 22%
           );
-
           transform-origin: left center;
-
-          animation: pageFoldShadow 1.1s
-            cubic-bezier(0.22, 0.61, 0.36, 1)
+          animation: pageFoldShadow 1.1s cubic-bezier(0.22, 0.61, 0.36, 1)
             forwards;
         }
 
@@ -714,44 +723,122 @@ export default function Home() {
           color: #9c2924;
         }
 
-        .typewriter {
-          font-family: monospace;
-          letter-spacing: 0.08em;
-        }
-
         .paper-line {
           border-bottom: 1px solid rgba(50, 40, 30, 0.2);
         }
       `}</style>
 
       <div className="detective-bg min-h-screen">
-        {view === "archive" ? (
-          <section className="mx-auto min-h-screen max-w-6xl px-6 py-12">
+        {view === "home" && (
+          <section className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-10">
             <div className="mb-6 flex items-center justify-between text-xs text-[#665443]">
-              <div
-                className="typewriter"
-                style={{ fontFamily: "monospace" }}
-              >
-                {userEmail}
-              </div>
+              <div className="typewriter">{userEmail}</div>
 
-              <div className="flex items-center gap-6">
-                {isAdmin && (
-                  <button
-                    onClick={() => router.push("/admin")}
-                    className="typewriter text-[#c9a227] transition hover:text-[#f0d36b]"
-                  >
-                    ADMIN PANEL →
-                  </button>
-                )}
+              <button
+                onClick={handleLogout}
+                className="typewriter transition hover:text-[#d8cdbb]"
+              >
+                CHIQISH →
+              </button>
+            </div>
+
+            <div className="flex flex-1 flex-col justify-center">
+              <header className="mb-16 text-center">
+                <div className="typewriter mb-4 text-xs tracking-[0.45em] text-[#8d7861]">
+                  TERGOV BOSHQARMASI
+                </div>
+
+                <h1 className="typewriter text-6xl font-bold tracking-[0.25em] text-[#d8cdbb]">
+                  DEDUCTION
+                </h1>
+
+                <p className="mt-5 text-sm italic text-[#806e5b]">
+                  Tergov ishlarini boshlang
+                </p>
+              </header>
+
+              {error && (
+                <div className="mx-auto mb-8 max-w-xl border border-[#8d302b] bg-[#291614] p-4 text-center text-sm text-[#d9958b]">
+                  XATO: {error}
+                </div>
+              )}
+
+              <div className="mx-auto grid w-full max-w-4xl gap-8 md:grid-cols-2">
+                <button
+                  onClick={generateCase}
+                  disabled={loading}
+                  className="home-card home-card-red min-h-[330px] p-10 text-left disabled:opacity-40"
+                >
+                  <div className="relative z-10 flex h-full flex-col justify-between">
+                    <div>
+                      <div className="typewriter mb-10 text-xs tracking-[0.3em] text-[#d6b58b]">
+                        YANGI ISH
+                      </div>
+
+                      <h2 className="typewriter text-3xl font-bold tracking-wider text-[#f0dfc8]">
+                        YANGI TERGOV
+                      </h2>
+
+                      <p className="mt-5 max-w-sm text-base leading-relaxed text-[#d6b58b]">
+                        Yangi jinoyat ishini oching va tergovni boshlang.
+                      </p>
+                    </div>
+
+                    <div className="typewriter text-xs tracking-widest text-[#e7d7c1]">
+                      {loading ? "TAYYORLANMOQDA..." : "ISHNI BOSHLASH →"}
+                    </div>
+                  </div>
+                </button>
 
                 <button
-                  onClick={handleLogout}
-                  className="typewriter transition hover:text-[#d8cdbb]"
-                  style={{ fontFamily: "monospace" }}
+                  onClick={openArchive}
+                  className="home-card min-h-[330px] p-10 text-left"
                 >
-                  CHIQISH →
+                  <div className="relative z-10 flex h-full flex-col justify-between">
+                    <div>
+                      <div className="typewriter mb-10 text-xs tracking-[0.3em] text-[#aa8b6b]">
+                        ARXIV
+                      </div>
+
+                      <h2 className="typewriter text-3xl font-bold tracking-wider text-[#e5d4ba]">
+                        TERGOV ARXIVI
+                      </h2>
+
+                      <p className="mt-5 max-w-sm text-base leading-relaxed text-[#c5a781]">
+                        Avvalgi tergov fayllarini ko'rib chiqing.
+                      </p>
+                    </div>
+
+                    <div className="typewriter text-xs tracking-widest text-[#d6b58b]">
+                      ARXIVNI OCHISH →
+                    </div>
+                  </div>
                 </button>
+              </div>
+            </div>
+
+            <div className="mt-10 text-center">
+              <div className="typewriter text-[10px] tracking-[0.35em] text-[#4d3b2b]">
+                DEDUCTION · INVESTIGATION SYSTEM
+              </div>
+            </div>
+          </section>
+        )}
+
+        {view === "archive" && (
+          <section className="mx-auto min-h-screen max-w-6xl px-6 py-12">
+            <div className="mb-8 flex items-center justify-between">
+              <button
+                onClick={() => setView("home")}
+                className="typewriter text-xs tracking-widest text-[#8d7861] transition hover:text-[#d8cdbb]"
+              >
+                ← BOSH SAHIFA
+              </button>
+
+              <div className="typewriter text-xs text-[#665443]">
+                {loadingCases
+                  ? "TEKSHIRILMOQDA..."
+                  : `${cases.length} TA FAYL`}
               </div>
             </div>
 
@@ -761,7 +848,7 @@ export default function Home() {
               </div>
 
               <h1 className="typewriter text-5xl font-bold tracking-[0.25em] text-[#d8cdbb]">
-                DEDUCTION
+                ARXIV
               </h1>
 
               <p className="mt-4 text-sm italic text-[#806e5b]">
@@ -829,9 +916,7 @@ export default function Home() {
                         </div>
 
                         <div className="mt-5 text-xs text-[#c5a781]">
-                          {new Date(item.created_at).toLocaleDateString(
-                            "uz-UZ"
-                          )}
+                          {new Date(item.created_at).toLocaleDateString("uz-UZ")}
                         </div>
 
                         <div className="absolute bottom-4 right-5 text-xs text-[#d6b58b]">
@@ -844,28 +929,18 @@ export default function Home() {
 
                 <div className="shelf-line mt-10 h-4 rounded-sm" />
               </div>
-
-              <div className="mt-10 text-center">
-                <button
-                  onClick={generateCase}
-                  disabled={loading}
-                  className="typewriter border border-[#8d302b] bg-[#64221e] px-8 py-4 text-sm tracking-widest text-[#e7d7c1] transition hover:bg-[#852c26] disabled:opacity-40"
-                >
-                  {loading
-                    ? "FAYL TAYYORLANMOQDA..."
-                    : "+ YANGI TERGOV FAYLI YARATISH"}
-                </button>
-              </div>
             </div>
           </section>
-        ) : (
+        )}
+
+        {view === "case" && (
           <section className="mx-auto min-h-screen max-w-5xl px-6 py-10">
             <div className="mb-8 flex items-center justify-between">
               <button
                 onClick={closeCase}
                 className="typewriter text-xs tracking-widest text-[#8d7861] transition hover:text-[#d8cdbb]"
               >
-                ← ARXIVGA QAYTISH
+                ← BOSH SAHIFAGA QAYTISH
               </button>
 
               <div className="typewriter text-xs text-[#665443]">
@@ -912,37 +987,21 @@ export default function Home() {
                         </div>
 
                         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                          <button
-                            onClick={() => goToSection("details")}
-                            className="paper-line flex justify-between py-3 text-left transition hover:pl-3"
-                          >
-                            <span>01 · ISH TAFSILOTLARI</span>
-                            <span>→</span>
-                          </button>
-
-                          <button
-                            onClick={() => goToSection("suspects")}
-                            className="paper-line flex justify-between py-3 text-left transition hover:pl-3"
-                          >
-                            <span>02 · GUMON QILINUVCHILAR</span>
-                            <span>→</span>
-                          </button>
-
-                          <button
-                            onClick={() => goToSection("clues")}
-                            className="paper-line flex justify-between py-3 text-left transition hover:pl-3"
-                          >
-                            <span>03 · DALILLAR</span>
-                            <span>→</span>
-                          </button>
-
-                          <button
-                            onClick={() => goToSection("verdict")}
-                            className="paper-line flex justify-between py-3 text-left transition hover:pl-3"
-                          >
-                            <span>04 · XULOSA</span>
-                            <span>→</span>
-                          </button>
+                          {[
+                            ["details", "01 · ISH TAFSILOTLARI"],
+                            ["suspects", "02 · GUMON QILINUVCHILAR"],
+                            ["clues", "03 · DALILLAR"],
+                            ["verdict", "04 · XULOSA"],
+                          ].map(([key, label]) => (
+                            <button
+                              key={key}
+                              onClick={() => goToSection(key as Section)}
+                              className="paper-line flex justify-between py-3 text-left transition hover:pl-3"
+                            >
+                              <span>{label}</span>
+                              <span>→</span>
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -983,8 +1042,7 @@ export default function Home() {
                           </div>
 
                           <p className="mt-4 italic text-[#665443]">
-                            &quot;Har bir detal muhim. Ammo har bir dalil
-                            haqiqatni aytmaydi.&quot;
+                            &quot;Har bir detal muhim. Ammo har bir dalil haqiqatni aytmaydi.&quot;
                           </p>
                         </div>
                       </div>
@@ -1002,7 +1060,6 @@ export default function Home() {
                       <div className="mt-10 grid gap-5">
                         {caseData.solution_data.suspects.map((suspect, i) => {
                           const selected = selectedSuspects.has(suspect.name);
-
                           const culprit =
                             verdict &&
                             caseData.solution_data.culprit.includes(
@@ -1049,7 +1106,7 @@ export default function Home() {
                                   />
 
                                   <path
-                                    d="M 20 95 Q 20 62 55 62 Q 90 62 90 95 Z"
+                                    d="M20 95 Q20 62 55 62 Q90 62 90 95 Z"
                                     fill="#e4d9c4"
                                     opacity="0.9"
                                   />
@@ -1171,9 +1228,7 @@ export default function Home() {
                               {revealed && !decision && !verdict && (
                                 <div className="flex gap-3 px-5 pb-5">
                                   <button
-                                    onClick={() =>
-                                      decideClue(i, "kept")
-                                    }
+                                    onClick={() => decideClue(i, "kept")}
                                     className="flex-1 border border-[#3f6947] py-2 text-xs text-[#3f6947]"
                                   >
                                     ✓ MUHIM
@@ -1185,7 +1240,7 @@ export default function Home() {
                                     }
                                     className="flex-1 border border-[#8d302b] py-2 text-xs text-[#8d302b]"
                                   >
-                                    ✕ CHALG&apos;ITUVCHI
+                                    ✕ CHALG'ITUVCHI
                                   </button>
                                 </div>
                               )}
@@ -1198,7 +1253,8 @@ export default function Home() {
                                   {wasCorrect === false &&
                                     "✕ XATO BAHOLANDI"}
 
-                                  {wasCorrect === null && "— BAHOLANMADI"}
+                                  {wasCorrect === null &&
+                                    "— BAHOLANMADI"}
                                 </div>
                               )}
                             </div>
@@ -1224,8 +1280,7 @@ export default function Home() {
                             </div>
 
                             <p className="mx-auto mt-6 max-w-xl text-lg">
-                              Barcha dalillarni tahlil qiling va haqiqiy
-                              aybdorni aniqlang.
+                              Barcha dalillarni tahlil qiling va haqiqiy aybdorni aniqlang.
                             </p>
 
                             <button
@@ -1298,7 +1353,7 @@ export default function Home() {
                   />
 
                   <path
-                    d="M 20 95 Q 20 62 55 62 Q 90 62 90 95 Z"
+                    d="M20 95 Q20 62 55 62 Q90 62 90 95 Z"
                     fill="#e4d9c4"
                     opacity="0.9"
                   />
@@ -1399,7 +1454,7 @@ export default function Home() {
         {loading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
             <div className="typewriter text-sm tracking-widest text-[#d8cdbb]">
-              FAYL OCHILMOQDA...
+              FAYL TAYYORLANMOQDA...
             </div>
           </div>
         )}
