@@ -82,7 +82,15 @@ function ClueIcon({ index }: { index: number }) {
       {type === 1 && (
         <>
           <circle cx="45" cy="45" r="18" fill="none" stroke="#e4d9c4" strokeWidth="4" />
-          <line x1="58" y1="58" x2="75" y2="75" stroke="#e4d9c4" strokeWidth="5" strokeLinecap="round" />
+          <line
+            x1="58"
+            y1="58"
+            x2="75"
+            y2="75"
+            stroke="#e4d9c4"
+            strokeWidth="5"
+            strokeLinecap="round"
+          />
         </>
       )}
 
@@ -94,18 +102,64 @@ function ClueIcon({ index }: { index: number }) {
             stroke="#e4d9c4"
             strokeWidth="2"
           />
-          <path d="M47 35 Q55 38 63 35" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
-          <path d="M45 45 Q55 49 65 45" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
-          <path d="M47 55 Q55 58 63 55" fill="none" stroke="#e4d9c4" strokeWidth="1.5" />
+          <path
+            d="M47 35 Q55 38 63 35"
+            fill="none"
+            stroke="#e4d9c4"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M45 45 Q55 49 65 45"
+            fill="none"
+            stroke="#e4d9c4"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M47 55 Q55 58 63 55"
+            fill="none"
+            stroke="#e4d9c4"
+            strokeWidth="1.5"
+          />
         </>
       )}
 
       {type === 3 && (
         <>
-          <circle cx="42" cy="42" r="12" fill="none" stroke="#e4d9c4" strokeWidth="4" />
-          <line x1="51" y1="51" x2="77" y2="77" stroke="#e4d9c4" strokeWidth="4" strokeLinecap="round" />
-          <line x1="67" y1="67" x2="75" y2="59" stroke="#e4d9c4" strokeWidth="4" strokeLinecap="round" />
-          <line x1="72" y1="72" x2="80" y2="64" stroke="#e4d9c4" strokeWidth="4" strokeLinecap="round" />
+          <circle
+            cx="42"
+            cy="42"
+            r="12"
+            fill="none"
+            stroke="#e4d9c4"
+            strokeWidth="4"
+          />
+          <line
+            x1="51"
+            y1="51"
+            x2="77"
+            y2="77"
+            stroke="#e4d9c4"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          <line
+            x1="67"
+            y1="67"
+            x2="75"
+            y2="59"
+            stroke="#e4d9c4"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          <line
+            x1="72"
+            y1="72"
+            x2="80"
+            y2="64"
+            stroke="#e4d9c4"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
         </>
       )}
 
@@ -117,8 +171,18 @@ function ClueIcon({ index }: { index: number }) {
             stroke="#e4d9c4"
             strokeWidth="3"
           />
-          <path d="M40 42 Q55 48 70 42" fill="none" stroke="#e4d9c4" strokeWidth="2" />
-          <path d="M40 55 Q55 61 70 55" fill="none" stroke="#e4d9c4" strokeWidth="2" />
+          <path
+            d="M40 42 Q55 48 70 42"
+            fill="none"
+            stroke="#e4d9c4"
+            strokeWidth="2"
+          />
+          <path
+            d="M40 55 Q55 61 70 55"
+            fill="none"
+            stroke="#e4d9c4"
+            strokeWidth="2"
+          />
         </>
       )}
 
@@ -135,9 +199,21 @@ function ClueIcon({ index }: { index: number }) {
 
       {type === 6 && (
         <>
-          <path d="M30 70 L55 30 L80 70 Z" fill="none" stroke="#e4d9c4" strokeWidth="3" />
+          <path
+            d="M30 70 L55 30 L80 70 Z"
+            fill="none"
+            stroke="#e4d9c4"
+            strokeWidth="3"
+          />
           <circle cx="55" cy="60" r="5" fill="#e4d9c4" />
-          <line x1="55" y1="42" x2="55" y2="54" stroke="#e4d9c4" strokeWidth="3" />
+          <line
+            x1="55"
+            y1="42"
+            x2="55"
+            y2="54"
+            stroke="#e4d9c4"
+            strokeWidth="3"
+          />
         </>
       )}
     </svg>
@@ -164,7 +240,10 @@ function SectionHeader({
 
       <div className="flex items-end justify-between">
         <div>
-          <div className="typewriter text-xs text-[#766858]">SAHIFA {number}</div>
+          <div className="typewriter text-xs text-[#766858]">
+            SAHIFA {number}
+          </div>
+
           <h2 className="typewriter mt-3 text-3xl font-bold tracking-widest">
             {title}
           </h2>
@@ -179,6 +258,7 @@ export default function Home() {
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [view, setView] = useState<View>("home");
   const [section, setSection] = useState<Section>("cover");
@@ -190,16 +270,26 @@ export default function Home() {
   const [cases, setCases] = useState<CaseMetadata[]>([]);
   const [caseData, setCaseData] = useState<CaseData | null>(null);
 
-  const [selectedSuspects, setSelectedSuspects] = useState<Set<string>>(new Set());
+  const [selectedSuspects, setSelectedSuspects] = useState<Set<string>>(
+    new Set()
+  );
+
   const [verdict, setVerdict] = useState<"correct" | "wrong" | null>(null);
+
   const [revealedClues, setRevealedClues] = useState<Set<number>>(new Set());
-  const [clueDecisions, setClueDecisions] = useState<Record<number, ClueDecision>>({});
+
+  const [clueDecisions, setClueDecisions] = useState<
+    Record<number, ClueDecision>
+  >({});
+
   const [pageTurning, setPageTurning] = useState(false);
 
   const [chatSuspect, setChatSuspect] = useState<string | null>(null);
+
   const [chatMessages, setChatMessages] = useState<
     { role: "user" | "assistant"; content: string; mood?: string }[]
   >([]);
+
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
@@ -215,7 +305,24 @@ export default function Home() {
       return;
     }
 
-    setUserEmail(data.session.user.email ?? null);
+    const email = data.session.user.email ?? null;
+
+    setUserEmail(email);
+
+    try {
+      const res = await fetch("/api/admin", {
+        headers: {
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+      });
+
+      const json = await res.json();
+
+      setIsAdmin(json.isAdmin === true);
+    } catch {
+      setIsAdmin(false);
+    }
+
     setCheckingAuth(false);
   }
 
@@ -380,6 +487,7 @@ export default function Home() {
     if (!caseData || selectedSuspects.size === 0) return;
 
     const chosen = Array.from(selectedSuspects);
+
     const isCorrect = arraysEqualAsSets(
       chosen,
       caseData.solution_data.culprit
@@ -402,7 +510,9 @@ export default function Home() {
   }
 
   async function sendChatMessage() {
-    if (!chatInput.trim() || !caseData || !chatSuspect || chatLoading) return;
+    if (!chatInput.trim() || !caseData || !chatSuspect || chatLoading) {
+      return;
+    }
 
     const userMessage = chatInput.trim();
 
@@ -470,7 +580,10 @@ export default function Home() {
   if (checkingAuth) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#100d0a] text-[#d8cdbb]">
-        <div className="text-xs tracking-widest" style={{ fontFamily: "monospace" }}>
+        <div
+          className="text-xs tracking-widest"
+          style={{ fontFamily: "monospace" }}
+        >
           TEKSHIRILMOQDA...
         </div>
       </main>
@@ -734,12 +847,23 @@ export default function Home() {
             <div className="mb-6 flex items-center justify-between text-xs text-[#665443]">
               <div className="typewriter">{userEmail}</div>
 
-              <button
-                onClick={handleLogout}
-                className="typewriter transition hover:text-[#d8cdbb]"
-              >
-                CHIQISH →
-              </button>
+              <div className="flex items-center gap-6">
+                {isAdmin && (
+                  <button
+                    onClick={() => router.push("/admin")}
+                    className="typewriter text-[#c9a227] transition hover:text-[#f0d56a]"
+                  >
+                    ADMIN PANEL →
+                  </button>
+                )}
+
+                <button
+                  onClick={handleLogout}
+                  className="typewriter transition hover:text-[#d8cdbb]"
+                >
+                  CHIQISH →
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-1 flex-col justify-center">
@@ -916,7 +1040,9 @@ export default function Home() {
                         </div>
 
                         <div className="mt-5 text-xs text-[#c5a781]">
-                          {new Date(item.created_at).toLocaleDateString("uz-UZ")}
+                          {new Date(item.created_at).toLocaleDateString(
+                            "uz-UZ"
+                          )}
                         </div>
 
                         <div className="absolute bottom-4 right-5 text-xs text-[#d6b58b]">
@@ -1060,6 +1186,7 @@ export default function Home() {
                       <div className="mt-10 grid gap-5">
                         {caseData.solution_data.suspects.map((suspect, i) => {
                           const selected = selectedSuspects.has(suspect.name);
+
                           const culprit =
                             verdict &&
                             caseData.solution_data.culprit.includes(
