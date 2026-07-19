@@ -293,9 +293,21 @@ export default function Home() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
+  const [watsonOpen, setWatsonOpen] = useState(false);
+  const [watsonMessages, setWatsonMessages] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([]);
+  const [watsonInput, setWatsonInput] = useState("");
+  const [watsonLoading, setWatsonLoading] = useState(false);
+
   useEffect(() => {
     checkAuth();
   }, []);
+
+  async function getToken() {
+    const { data } = await supabaseBrowser.auth.getSession();
+    return data.session?.access_token;
+  }
 
   async function checkAuth() {
     const { data } = await supabaseBrowser.auth.getSession();
@@ -336,7 +348,11 @@ export default function Home() {
       setLoadingCases(true);
       setError(null);
 
-      const res = await fetch("/api/cases");
+      const token = await getToken();
+
+      const res = await fetch("/api/cases", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const json = await res.json();
 
       if (!res.ok) {
@@ -362,7 +378,11 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/cases/${id}`);
+      const token = await getToken();
+
+      const res = await fetch(`/api/cases/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const json = await res.json();
 
       if (!res.ok) {
@@ -393,8 +413,11 @@ export default function Home() {
     setLoading(true);
 
     try {
+      const token = await getToken();
+
       const res = await fetch("/api/generate-case", {
         method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const json = await res.json();
@@ -528,10 +551,7 @@ export default function Home() {
     setChatLoading(true);
 
     try {
-      const { data: sessionData } =
-        await supabaseBrowser.auth.getSession();
-
-      const token = sessionData.session?.access_token;
+      const token = await getToken();
 
       const res = await fetch("/api/interrogate", {
         method: "POST",
@@ -570,6 +590,58 @@ export default function Home() {
       ]);
     } finally {
       setChatLoading(false);
+    }
+  }
+
+  function openWatson() {
+    setWatsonOpen(true);
+    setWatsonMessages([]);
+    setWatsonInput("");
+  }
+
+  function closeWatson() {
+    setWatsonOpen(false);
+    setWatsonMessages([]);
+    setWatsonInput("");
+  }
+
+  async function sendWatsonMessage() {
+    if (!watsonInput.trim() || !caseData || watsonLoading) return;
+
+    const userMessage = watsonInput.trim();
+    setWatsonMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setWatsonInput("");
+    setWatsonLoading(true);
+
+    try {
+      const token = await getToken();
+
+      const res = await fetch("/api/consult-watson", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          case_id: caseData.id,
+          message: userMessage,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || "Watson bilan bog'lanishda xato");
+      }
+
+      setWatsonMessages((prev) => [...prev, { role: "assistant", content: json.reply }]);
+    } catch (err: any) {
+      setWatsonMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `(Xato: ${err.message || "Noma'lum xato"})` },
+      ]);
+    } finally {
+      setWatsonLoading(false);
     }
   }
 
@@ -1129,6 +1201,13 @@ export default function Home() {
                             </button>
                           ))}
                         </div>
+
+                        <button
+                          onClick={openWatson}
+                          className="typewriter mt-6 w-full border border-[#4a3b28] bg-[#2a2015] py-3 text-xs text-[#e7d7c1] transition hover:bg-[#3a2c1d]"
+                        >
+                          🎩 DR. WATSON FIKRI
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1570,6 +1649,84 @@ export default function Home() {
                   onClick={sendChatMessage}
                   disabled={chatLoading || !chatInput.trim()}
                   className="typewriter border border-[#8d302b] bg-[#64221e] px-4 py-2 text-xs text-[#e7d7c1] transition hover:bg-[#852c26] disabled:opacity-40"
+                >
+                  YUBORISH
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {watsonOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div
+              className="flex max-h-[80vh] w-full max-w-lg flex-col border border-[#3d5a45]"
+              style={{ backgroundColor: "#141a16" }}
+            >
+              <div className="flex items-center gap-3 border-b border-[#3d5a45] p-4">
+                <div
+                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-xl"
+                  style={{ backgroundColor: "#3f6947" }}
+                >
+                  🎩
+                </div>
+                <div className="flex-1">
+                  <div className="typewriter text-xs text-[#8ba893]">
+                    MASLAHAT XONASI
+                  </div>
+                  <div className="typewriter text-lg font-bold text-[#d8e8dc]">
+                    Doktor Vatson
+                  </div>
+                </div>
+                <button
+                  onClick={closeWatson}
+                  className="typewriter text-xs text-[#8ba893] transition hover:text-[#d8e8dc]"
+                >
+                  ✕ YOPISH
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                {watsonMessages.length === 0 && (
+                  <div className="typewriter text-center text-xs text-[#5f7568]">
+                    Doktor Vatsondan tergov bo'yicha fikr so'rang...
+                  </div>
+                )}
+                {watsonMessages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`max-w-[85%] p-3 text-sm ${
+                      msg.role === "user"
+                        ? "ml-auto border border-[#8d302b] bg-[#291614] text-[#e7d7c1]"
+                        : "border border-[#3d5a45] bg-[#1c2620] text-[#d8e8dc]"
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                ))}
+                {watsonLoading && (
+                  <div className="typewriter text-xs text-[#5f7568]">
+                    Doktor Vatson o'ylamoqda...
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 border-t border-[#3d5a45] p-4">
+                <input
+                  type="text"
+                  value={watsonInput}
+                  onChange={(e) => setWatsonInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") sendWatsonMessage();
+                  }}
+                  disabled={watsonLoading}
+                  placeholder="Fikringizni yozing..."
+                  className="flex-1 border border-[#3d5a45] bg-[#100d0a] px-3 py-2 text-sm text-[#d8e8dc] outline-none focus:border-[#5fae74]"
+                />
+                <button
+                  onClick={sendWatsonMessage}
+                  disabled={watsonLoading || !watsonInput.trim()}
+                  className="typewriter border border-[#3f6947] bg-[#2a3f2e] px-4 py-2 text-xs text-[#d8e8dc] transition hover:bg-[#3a523e] disabled:opacity-40"
                 >
                   YUBORISH
                 </button>

@@ -45,8 +45,35 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        {
+          error: "Authorization token topilmadi",
+        },
+        { status: 401 }
+      );
+    }
+
+    const accessToken = authHeader.replace("Bearer ", "");
+
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.getUser(accessToken);
+
+    if (authError || !authData.user) {
+      return NextResponse.json(
+        {
+          error: "Foydalanuvchi aniqlanmadi",
+        },
+        { status: 401 }
+      );
+    }
+
+    const userId = authData.user.id;
+
     const setting = pick(SETTINGS);
     const names = pick(NAME_POOLS);
     const twist = pick(TWISTS);
@@ -59,11 +86,14 @@ VOQEA JOYI:
 ${setting}
 
 ISMLAR:
-Faqat shu 5 ta ismdan foydalan:
+Faqat shu 5 ta ismdan gumon qilinuvchilar uchun foydalan:
 ${names.join(", ")}
 
 YASHIRIN TWIST:
 ${twist}
+
+Muhim:
+Har bir yangi case uchun voqeaga mantiqan bog'langan random guvohlar ham yarat.
 
 Faqat quyidagi JSON formatida javob ber.
 Boshqa hech qanday matn yozma.
@@ -86,6 +116,17 @@ Boshqa hech qanday matn yozma.
       "misleading": false
     }
   ],
+  "witnesses": [
+    {
+      "name": "Guvohning ism-familiyasi",
+      "role": "Kasbi yoki voqeaga aloqasi",
+      "description": "Guvoh haqida qisqacha ma'lumot",
+      "statement": "Guvoh tergov boshida aytadigan asosiy gapi",
+      "personality": "Guvohning xarakteri",
+      "reliability": "high yoki medium yoki low",
+      "hidden_information": "Guvoh hozircha yashirayotgan muhim ma'lumot"
+    }
+  ],
   "culprit": ["Aybdor ismi"],
   "explanation": "Yechim va mantiqiy asoslash"
 }
@@ -105,7 +146,26 @@ QAT'IY QOIDALAR:
 11. Aybdor aniqlanishi mumkin bo'lsin.
 12. Red-herring dalillar ishonarli bo'lsin.
 13. "culprit" ichidagi ism gumon qilinuvchilar orasida bo'lishi shart.
-14. "culprit" ichida 2 ta ism bo'lsa, ular aynan 2 ta gumon qilinuvchi bo'lishi shart.`;
+14. "culprit" ichida 2 ta ism bo'lsa, ular aynan 2 ta gumon qilinuvchi bo'lishi shart.
+
+GUVOHLAR BO'YICHA QOIDALAR:
+
+15. Aynan 2 dan 5 tagacha guvoh yarat.
+16. Guvohlar har bir case uchun random bo'lsin.
+17. Lekin har bir guvoh jinoyat, gumon qilinuvchilar yoki dalillardan kamida bittasiga mantiqan bog'langan bo'lsin.
+18. Guvohlar irrelevant yoki shunchaki tasodifiy odam bo'lmasin.
+19. Har bir guvohning o'ziga xos personality bo'lsin.
+20. Har bir guvohning reliability qiymati faqat "high", "medium" yoki "low" bo'lsin.
+21. Har bir guvoh kamida bitta muhim ma'lumotni bilsin.
+22. Har bir guvoh o'zining "hidden_information" qismini boshida ochiq aytmasin.
+23. hidden_information guvohning shaxsiy xotirasi, yashirayotgan siri yoki voqea haqidagi muhim kuzatuvi bo'lishi mumkin.
+24. Guvohlar orasida kamida bittasi jinoyat vaqtiga oid muhim ma'lumot bilsin.
+25. Guvohlar orasida kamida bittasi gumon qilinuvchilardan biri bilan bog'liq ma'lumot bilsin.
+26. Guvohlarning kamida bittasi o'z bayonotida nimanidir yashirayotgan yoki noaniq aytayotgan bo'lsin.
+27. Guvohlar aybdorni to'g'ridan-to'g'ri "u aybdor" deb aniq ko'rsatmasin.
+28. Guvohlar orqali Sherlock Holmes mantiqiy xulosa chiqarishi mumkin bo'lsin.
+29. Har bir witness name unique bo'lsin.
+30. witnesses HAR DOIM array bo'lsin.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.1-flash-lite",
@@ -132,15 +192,21 @@ QAT'IY QOIDALAR:
       ? caseData.culprit
       : [caseData.culprit];
 
+    const witnesses = Array.isArray(caseData.witnesses)
+      ? caseData.witnesses
+      : [];
+
     const { data, error } = await supabaseAdmin
       .from("cases")
       .insert({
         fingerprint: crypto.randomUUID(),
+        user_id: userId,
         title: caseData.title,
         plot_summary: caseData.plot_summary,
         solution_data: {
           suspects: caseData.suspects,
           clues: caseData.clues,
+          witnesses,
           culprit: culpritArray,
           explanation: caseData.explanation,
         },

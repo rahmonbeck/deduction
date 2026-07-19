@@ -1,51 +1,53 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const ADMIN_EMAIL = "rahmonjon303@icloud.com";
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
-    const authHeader = req.headers.get("authorization");
+    const authHeader = request.headers.get("authorization");
 
     if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        {
+          isAdmin: false,
+          error: "Authorization token topilmadi",
+        },
         { status: 401 }
       );
     }
 
-    const token = authHeader.replace("Bearer ", "");
+    const accessToken = authHeader.replace("Bearer ", "");
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.getUser(accessToken);
 
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
+    if (authError || !authData.user) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        {
+          isAdmin: false,
+          error: "Foydalanuvchi aniqlanmadi",
+        },
         { status: 401 }
       );
     }
 
-    if (user.email !== ADMIN_EMAIL) {
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
-      );
-    }
+    const userEmail = authData.user.email?.toLowerCase();
+
+    const isAdmin = userEmail === ADMIN_EMAIL.toLowerCase();
 
     return NextResponse.json({
-      isAdmin: true,
+      isAdmin,
+      email: userEmail,
     });
-  } catch {
+  } catch (err: any) {
+    console.error("Admin check error:", err);
+
     return NextResponse.json(
-      { error: "Server error" },
+      {
+        isAdmin: false,
+        error: err?.message || "Noma'lum xato",
+      },
       { status: 500 }
     );
   }
