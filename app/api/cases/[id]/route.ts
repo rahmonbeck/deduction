@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+const ADMIN_EMAIL = "rahmonjon303@icloud.com";
+
 type RouteContext = {
   params: Promise<{
     id: string;
   }>;
 };
 
-export async function GET(request: Request, { params }: RouteContext) {
+export async function DELETE(request: Request, { params }: RouteContext) {
   try {
     const authHeader = request.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -21,34 +23,26 @@ export async function GET(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Foydalanuvchi aniqlanmadi" }, { status: 401 });
     }
 
-    const userId = authData.user.id;
+    if (authData.user.email !== ADMIN_EMAIL) {
+      return NextResponse.json({ error: "Ruxsat yo'q" }, { status: 403 });
+    }
+
     const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: "Case ID topilmadi" }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("cases")
-      .select("id, fingerprint, title, plot_summary, solution_data, created_at, user_id")
-      .eq("id", id)
-      .single();
+    const { error } = await supabaseAdmin.from("cases").delete().eq("id", id);
 
     if (error) {
-      console.error("Case detail error:", error);
-      return NextResponse.json({ error: error.message }, { status: 404 });
+      console.error("Case delete error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    if (data.user_id !== userId) {
-      return NextResponse.json({ error: "Bu faylga kirish huquqingiz yo'q" }, { status: 403 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      case: data,
-    });
+    return NextResponse.json({ success: true });
   } catch (err: any) {
-    console.error("Unexpected case detail error:", err);
+    console.error("Unexpected admin delete error:", err);
     return NextResponse.json(
       {
         error: err.message || "Noma'lum xato",
